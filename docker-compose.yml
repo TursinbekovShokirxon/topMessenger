@@ -6,3 +6,8 @@ services:
     build:
       context: .
       dockerfile: Mesenger/Dockerfile
+    ports:
+        - "51870:8080"
+        - "51871:8081"
+    environment:
+    - ASPNETCORE_ENVIRONMENT=Development
