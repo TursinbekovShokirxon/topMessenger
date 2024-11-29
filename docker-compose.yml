@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  mesenger:
+    image: ${DOCKER_REGISTRY-}mesenger
+    build:
+      context: .
+      dockerfile: Mesenger/Dockerfile
