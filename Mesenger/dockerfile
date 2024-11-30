@@ -1,28 +1,28 @@
-#See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER app
-WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
-
+# Используем образ SDK для сборки приложения
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Mesenger/Mesenger.csproj", "Mesenger/"]
-COPY ["Application/Application.csproj", "Application/"]
-COPY ["Domain/Domain.csproj", "Domain/"]
-COPY ["Infrastructure/Infrastructure.csproj", "Infrastructure/"]
-RUN dotnet restore "./Mesenger/./Mesenger.csproj"
+
+# Копируем файл проекта и восстанавливаем зависимости
+COPY Mesenger/Mesenger.csproj Mesenger/
+COPY Application/Application.csproj Application/
+COPY Domain/Domain.csproj Domain/
+COPY Infrastructure/Infrastructure.csproj Infrastructure/
+
+RUN dotnet restore Mesenger/Mesenger.csproj
+
+# Копируем остальные файлы и собираем приложение
 COPY . .
-WORKDIR "/src/Mesenger"
-RUN dotnet build "./Mesenger.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR /src/Mesenger
+RUN dotnet publish Mesenger.csproj -c Release -o /app/publish
 
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Mesenger.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-
-FROM base AS final
+# Используем минимальный runtime образ для запуска приложения
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
+
+# Указываем порт, на котором приложение будет работать
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+
+# Запуск приложения
 ENTRYPOINT ["dotnet", "Mesenger.dll"]
